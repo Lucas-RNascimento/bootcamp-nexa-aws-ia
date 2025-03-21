@@ -1,26 +1,21 @@
 from pathlib import Path
-
 import boto3
-from mypy_boto3_rekognition.type_defs import (
-    CelebrityTypeDef,
-    RecognizeCelebritiesResponseTypeDef,
-)
+from mypy_boto3_rekognition.type_defs import CelebrityTypeDef, RecognizeCelebritiesResponseTypeDef
 from PIL import Image, ImageDraw, ImageFont
+from io import BytesIO
 
+# Initialize Rekognition and S3 clients
 client = boto3.client("rekognition")
+s3_client = boto3.client("s3")
 
+def recognize_celebrities_s3(bucket_name: str, file_name: str) -> RecognizeCelebritiesResponseTypeDef:
+    return client.recognize_celebrities(Image={"S3Object": {"Bucket": bucket_name, "Name": file_name}})
 
-def get_path(file_name: str) -> str:
-    return str(Path(__file__).parent / "images" / file_name)
-
-
-def recognize_celebrities(photo: str) -> RecognizeCelebritiesResponseTypeDef:
-    with open(photo, "rb") as image:
-        return client.recognize_celebrities(Image={"Bytes": image.read()})
-
-
-def draw_boxes(image_path: str, output_path: str, face_details: list[CelebrityTypeDef]):
-    image = Image.open(image_path)
+def draw_boxes_s3_and_save(bucket_name: str, file_name: str, output_bucket: str, output_key: str, face_details: list[CelebrityTypeDef]):
+    
+    # Download the image from the S3 bucket to memory
+    s3_object = s3_client.get_object(Bucket=bucket_name, Key=file_name)
+    image = Image.open(BytesIO(s3_object["Body"].read()))
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default()
 
@@ -43,22 +38,30 @@ def draw_boxes(image_path: str, output_path: str, face_details: list[CelebrityTy
             draw.rectangle(bbox, fill="red")
             draw.text(position, text, font=font, fill="white")
 
-    image.save(output_path)
-    print(f"Imagem salva com resultados em : {output_path}")
+    # Save the modified image to memory as bytes
+    image_buffer = BytesIO()
+    image.save(image_buffer, format="JPEG")
+    image_buffer.seek(0)
 
+    # Upload the image back to the output S3 bucket
+    s3_client.put_object(Bucket=output_bucket, Key=output_key, Body=image_buffer, ContentType="image/jpeg")
+    print(f"Imagem salva com resultados no bucket S3: {output_bucket}/{output_key}")
 
 if __name__ == "__main__":
+    input_bucket_name = "bkt-rekognition-celebrities"  # Bucket containing input images
+    output_bucket_name = "bkt-rekognition-celebrities"  # Bucket to store processed images
     photo_paths = [
-        get_path("bbc.jpg"),
-        get_path("msn.jpg"),
-        get_path("beckham-harden.jpg"),
+        "input/contora.jpg"  # Use "input" as a folder (prefix) within the bucket  
     ]
 
     for photo_path in photo_paths:
-        response = recognize_celebrities(photo_path)
+        print(f"Processando a imagem: {photo_path}")
+        response = recognize_celebrities_s3(input_bucket_name, photo_path)
         faces = response["CelebrityFaces"]
         if not faces:
             print(f"Não foram encontrados famosos para a imagem: {photo_path}")
             continue
-        output_path = get_path(f"{Path(photo_path).stem}-resultado.jpg")
-        draw_boxes(photo_path, output_path, faces)
+        
+        # Define the output path in S3 for the processed image
+        output_key = f"results/{Path(photo_path).stem}-resultado.jpg"
+        draw_boxes_s3_and_save(input_bucket_name, photo_path, output_bucket_name, output_key, faces)
