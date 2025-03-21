@@ -48,8 +48,8 @@ def draw_boxes_s3_and_save(bucket_name: str, file_name: str, output_bucket: str,
     print(f"Imagem salva com resultados no bucket S3: {output_bucket}/{output_key}")
 
 if __name__ == "__main__":
-    input_bucket_name = "bkt-rekognition-celebrities"  # Bucket containing input images
-    output_bucket_name = "bkt-rekognition-celebrities"  # Bucket to store processed images
+    input_bucket_name = "" #incluir nome do bucket
+    output_bucket_name = "" #incluir nome do bucket
     photo_paths = [
         "input/contora.jpg"  # Use "input" as a folder (prefix) within the bucket  
     ]
@@ -62,6 +62,6 @@ if __name__ == "__main__":
             print(f"Não foram encontrados famosos para a imagem: {photo_path}")
             continue
         
-        # Define the output path in S3 for the processed image
-        output_key = f"results/{Path(photo_path).stem}-resultado.jpg"
+        
+        output_key = f"results/{Path(photo_path).stem}-resultado.jpg"  # Use "results" as a folder (prefix) within the bucket 
         draw_boxes_s3_and_save(input_bucket_name, photo_path, output_bucket_name, output_key, faces)

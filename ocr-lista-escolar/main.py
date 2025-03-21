@@ -20,7 +20,7 @@ def detect_file_text_from_s3(bucket_name: str, file_name: str) -> list[str]:
 
 
 if __name__ == "__main__":
-    bucket_name = "bkt-textract-lista-material"
+    bucket_name = "" #incluir nome do bucket
     file_name = "lista-material-2.jpg"
 
     # Busca e imprime as linhas de texto extraídas

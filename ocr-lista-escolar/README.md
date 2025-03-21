@@ -140,7 +140,7 @@ Amazon Textract é uma poderosa ferramenta de OCR (Reconhecimento Óptico de Car
     # Ponto de entrada do script (executado apenas se o script for chamado diretamente).
     if __name__ == "__main__":
         # Nome do bucket no S3 onde o arquivo está armazenado.
-        bucket_name = "bkt-textract-lista-material" 
+        bucket_name = "" #incluir nome do bucket
         # Nome do arquivo que será processado no bucket do S3.
         file_name = "lista-3.jpeg"
 
@@ -164,7 +164,7 @@ Amazon Textract é uma poderosa ferramenta de OCR (Reconhecimento Óptico de Car
 
     ```python
         if __name__ == "__main__":
-        bucket_name = "bkt-textract-lista-material"
+        bucket_name = "" #incluir nome do bucket
         file_name = "lista-material-2.jpg"
 
         # Busca e imprime as linhas de texto extraídas
